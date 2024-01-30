@@ -32,10 +32,8 @@ fn handle_display<F>(action: &'static str, mut f: F)
 {
     cortex_m::interrupt::free(|cs| {
         let mut display_ref = DISPLAY.borrow(cs).borrow_mut();
-        match display_ref.as_mut() {
-            Some(ref mut display) =>  f(display),
-            None => panic!("{}", action),
-        }
+        let display = display_ref.as_mut().expect(action);
+        f(display);
     });
 }
 
