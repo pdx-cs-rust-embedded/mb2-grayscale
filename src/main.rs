@@ -16,13 +16,13 @@ use microbit::{
     hal::{
         prelude::*,
         
-        pac::{TIMER1, interrupt},
+        pac::{self, TIMER1, interrupt},
         timer::Timer,
     },
 };
 
 use panic_rtt_target as _;
-use rtt_target::{rprintln, rtt_init_print};
+use rtt_target::rtt_init_print;
 
 static DISPLAY: Mutex<RefCell<Option<Display<TIMER1>>>> =
     Mutex::new(RefCell::new(None));
@@ -32,10 +32,8 @@ fn handle_display<F>(action: &'static str, mut f: F)
 {
     cortex_m::interrupt::free(|cs| {
         let mut display_ref = DISPLAY.borrow(cs).borrow_mut();
-        match *display_ref {
-            Some(ref mut display) => {
-                f(display)
-            }
+        match display_ref.as_mut() {
+            Some(ref mut display) =>  f(display),
             None => panic!("{}", action),
         }
     });
@@ -44,29 +42,29 @@ fn handle_display<F>(action: &'static str, mut f: F)
 #[entry]
 fn main() -> ! {
     rtt_init_print!();
-    let board = Board::take().unwrap();
+    let mut board = Board::take().unwrap();
     let display = Display::new(board.TIMER1, board.display_pins);
     cortex_m::interrupt::free(|cs| {
         let mut cell = DISPLAY.borrow(cs).borrow_mut();
         *cell = Some(display);
     });
     let mut timer2 = Timer::new(board.TIMER0);
+    unsafe {
+        board.NVIC.set_priority(pac::Interrupt::TIMER1, 128);
+        pac::NVIC::unmask(pac::Interrupt::TIMER1);
+    }
 
-    rprintln!("starting");
     loop {
-        rprintln!("show");
-        handle_display("show", |display| {
-            display.show(&GreyscaleImage::new(&[
-                [0, 5, 0, 5, 0],
-                [7, 0, 7, 0, 7],
-                [7, 0, 0, 0, 7],
-                [0, 7, 0, 7, 0],
-                [0, 0, 7, 0, 0],
-            ]));
-        });
+        let image = GreyscaleImage::new(&[
+            [0, 5, 0, 5, 0],
+            [7, 0, 7, 0, 7],
+            [7, 0, 0, 0, 7],
+            [0, 7, 0, 7, 0],
+            [0, 0, 7, 0, 0],
+        ]);
+        handle_display("show", |display| display.show(&image));
         timer2.delay_ms(1000u32);
 
-        rprintln!("clear");
         handle_display("clear", |display| display.clear());
         timer2.delay_ms(1000u32);
     }
@@ -74,6 +72,5 @@ fn main() -> ! {
 
 #[interrupt]
 fn TIMER1() {
-    rprintln!("display");
     handle_display("interrupt", |display| display.handle_display_event());
 }
