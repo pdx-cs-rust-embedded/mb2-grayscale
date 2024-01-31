@@ -1,4 +1,4 @@
-Copyright © 2022 Bart Massey
+Copyright © 2024 Bart Massey
 
 [This program is licensed under the "MIT License"]
 

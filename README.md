@@ -1,8 +1,10 @@
-# poll-button
-Bart Massey 2023
+# mb2-grayscale: `microbit-v2` nonblocking `Display` demo
+Bart Massey 2024
 
-This Rust app for the BBC micro:bit v2 randomizes the LED
-display while button A is held down.
+This code is heavily adapted from crate examples and
+documentation in the `microbit-v2` crate. It provides a demo
+of using `microbit_v2::display::nonblocking::Display` to
+display "grayscale" images.
 
 ## Build and Run
 
@@ -19,11 +21,6 @@ on the `microbit` crate
 [repo](https://github.com/nrf-rs/microbit). You can then say
 
     cargo run --release
-
-By default, this program uses PCG64 as its pseudo-random
-number generator. To instead use WyRand:
-
-    cargo run --release --no-default-features --features=wyrand
 
 ## License
 
