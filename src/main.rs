@@ -33,8 +33,8 @@ fn main() -> ! {
     DISPLAY.init(display);
     let mut timer2 = Timer::new(board.TIMER0);
     unsafe {
-        board.NVIC.set_priority(pac::Interrupt::TIMER1, 128);
-        pac::NVIC::unmask(pac::Interrupt::TIMER1);
+        board.NVIC.set_priority(pac::interrupt::TIMER1, 128);
+        pac::NVIC::unmask(pac::interrupt::TIMER1);
     }
 
     let image = GreyscaleImage::new(&[

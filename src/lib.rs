@@ -3,18 +3,20 @@
 
 use core::cell::RefCell;
 
-pub use cortex_m;
-use cortex_m::interrupt::Mutex;
+pub use microbit;
+use microbit::hal::pac::{NVIC, Interrupt};
+
 
 /// This datatype provides a lock with interior mutability
 /// for the data inside. The locking is provided through a
 /// `cortex_m` critical section.
-pub struct LockMut<T>(Mutex<RefCell<Option<T>>>);
+pub struct LockMut<T>(RefCell<Option<T>>);
+unsafe impl<T> core::marker::Sync for LockMut<T> {}
 
 impl<T> LockMut<T> {
     /// Create a new empty `LockMut`.
     pub const fn new() -> Self {
-        LockMut(Mutex::new(RefCell::new(None)))
+        LockMut(RefCell::new(None))
     }
 
     /// Initialize a previously-uninitialized `LockMut`.
@@ -23,11 +25,11 @@ impl<T> LockMut<T> {
     ///
     /// Panics if this `LockMut` is to be initialized a second time.
     pub fn init(&self, val: T) {
-        cortex_m::interrupt::free(|cs| {
-            let mut cell = self.0.borrow(cs).borrow_mut();
-            assert!(cell.is_none(), "lock reinitialized");
-            *cell = Some(val);
-        });
+        NVIC::mask(Interrupt::TIMER1);
+        let mut cell = self.0.borrow_mut();
+        assert!(cell.is_none(), "lock reinitialized");
+        *cell = Some(val);
+        unsafe { NVIC::unmask(Interrupt::TIMER1) };
     }
 
     /// Locks, then runs the closure `f` with a mutable
@@ -37,13 +39,10 @@ impl<T> LockMut<T> {
     ///
     /// Panics if this `LockMut` is uninitialized.
     pub fn with_lock<F: FnOnce(&mut T)>(&self, f: F) {
-        cortex_m::interrupt::free(|cs| {
-            // &LockMut<T> → &Mutex<RefCell<Option<T>>> →
-            // &RefCell<Option<T>> → &mut Option<T>
-            let mut cell = self.0.borrow(cs).borrow_mut();
-            // &mut Option<T> → Option<&mut T> → &mut T
-            let val_mut = cell.as_mut().expect("empty lock");
-            f(val_mut);
-        });
+        NVIC::mask(Interrupt::TIMER1);
+        let mut cell = self.0.borrow_mut();
+        let val_mut = cell.as_mut().expect("empty lock");
+        f(val_mut);
+        unsafe { NVIC::unmask(Interrupt::TIMER1) };
     }
 }
