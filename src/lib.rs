@@ -21,7 +21,7 @@ impl<T> LockMut<T> {
     ///
     /// # Panics
     ///
-    /// Panics if this `LockMut` is initialized a second time.
+    /// Panics if this `LockMut` is to be initialized a second time.
     pub fn init(&self, val: T) {
         cortex_m::interrupt::free(|cs| {
             let mut cell = self.0.borrow(cs).borrow_mut();
@@ -38,7 +38,10 @@ impl<T> LockMut<T> {
     /// Panics if this `LockMut` is uninitialized.
     pub fn with_lock<F: FnOnce(&mut T)>(&self, f: F) {
         cortex_m::interrupt::free(|cs| {
+            // &LockMut<T> → &Mutex<RefCell<Option<T>>> →
+            // &RefCell<Option<T>> → &mut Option<T>
             let mut cell = self.0.borrow(cs).borrow_mut();
+            // &mut Option<T> → Option<&mut T> → &mut T
             let val_mut = cell.as_mut().expect("empty lock");
             f(val_mut);
         });
