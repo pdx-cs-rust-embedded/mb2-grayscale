@@ -19,7 +19,7 @@ use microbit::{
 use panic_rtt_target as _;
 use rtt_target::rtt_init_print;
 
-use mb2_grayscale::LockMut;
+use critical_section_lock_mut::LockMut;
 
 /// The display is shared by the main program and the
 /// interrupt handler.
