@@ -11,7 +11,7 @@ use microbit::{
     board::Board,
     display::nonblocking::{Display, GreyscaleImage},
     hal::{
-        pac::{self, TIMER1, interrupt},
+        pac::{self, interrupt, TIMER1},
         timer::Timer,
     },
 };
